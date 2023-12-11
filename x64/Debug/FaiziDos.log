@@ -1,0 +1,5 @@
+﻿  FaiziDos.cpp
+E:\University\Semester 3\DSA\Projects\Library\FaiziDos\FaiziDos\FaiziDos.cpp(24,59): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+E:\University\Semester 3\DSA\Projects\Library\FaiziDos\FaiziDos\FaiziDos.cpp(132,31): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+E:\University\Semester 3\DSA\Projects\Library\FaiziDos\FaiziDos\FaiziDos.cpp(41): warning C4715: 'BaseOfAll::ExtensionChecker': not all control paths return a value
+  FaiziDos.vcxproj -> E:\University\Semester 3\DSA\Projects\Library\FaiziDos\x64\Debug\FaiziDos.exe
