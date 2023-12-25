@@ -1,4 +1,3 @@
-#pragma warning(disable : 4996)
 #include<iostream>
 #include<ctime>
 #include<vector>
@@ -8,8 +7,413 @@
 #include<string>
 #include<sstream>
 #include<conio.h>
+#include<list>
 
 using namespace std;
+// NOTEPAD
+class Notepad {
+public:
+	list<char> temp;
+	list<list<char>>* sheet;
+	string tempString = "";
+	Notepad(string data)
+	{
+		sheet = new list<list<char>>;
+		load(data);
+	}
+	void load(string data)
+	{
+		int size = data.length();
+		for (int i = 0; i < size; i++)
+		{
+			if (data[i] == '\n' || i == size - 1)
+			{
+				sheet->push_back(temp);
+				temp.clear();
+			}
+			else
+			{
+				temp.push_back(data[i]);
+			}
+		}
+	}
+	void insertAtIndex(int index, string data) {
+		list<list<char>>* newSheet = new list<list<char>>();
+		int x = 0;
+		for (auto i : *sheet)
+		{
+			if (x == index)
+			{
+				stringToList(data);
+				newSheet->push_back(temp);
+			}
+			else
+			{
+				newSheet->push_back(i);
+			}
+			x++;
+		}
+		sheet = newSheet;
+	}
+	void insert(string data) {
+		stringToList(data);
+		sheet->push_back(temp);
+	}
+	void edit(int index)
+	{
+		int x = 0;
+		for (auto i : *sheet)
+		{
+			if (x == index)
+			{
+				temp = i;
+				break;
+			}
+			x++;
+		}
+	}
+	void stringToList(string data)
+	{
+		temp.clear();
+		for (int i = 0; i < data.length(); i++)
+		{
+			temp.push_back(data[i]);
+		}
+	}
+	string listToString()
+	{
+		string data = "";
+		for (auto i : temp)
+		{
+			data = data + i;
+		}
+		tempString = data;
+		return data;
+	}
+	string listToString(list<char> temp)
+	{
+		string data = "";
+		for (auto i : temp)
+		{
+			data = data + i;
+		}
+		return data;
+	}
+	string whole()
+	{
+		string data = "";
+		for (auto i : *sheet)
+		{
+			data = data + listToString(i) + '\n';
+		}
+		return data;
+	}
+};
+
+class FrontEnd {
+public:
+	Notepad* note;
+	string select = "- 1";
+	int EditedIndex = -1;
+	list<char> work;
+	vector<string> stateOfTime;
+	vector<string> menu = { "Insert a Line","Edit a Line","Delete a Line","Replace a Line","Exit" };
+	int state = 0;
+	FrontEnd(string data)
+	{
+		note = new Notepad(data);
+	}
+	string Driver()
+	{
+		LinesPrint();
+		while (true)
+		{
+			menuPrint(menu, 5, 5);
+			if (select == "1")
+			{
+
+				note->insert(Lineget());
+				LinesPrint();
+			}
+			if (select == "2")
+			{
+				edit();
+				LinesPrint();
+			}
+			if (select == "3")
+			{
+				Delete();
+				LinesPrint();
+			}
+			if (select == "4")
+			{
+				replace();
+				LinesPrint();
+			}
+			if (select == "5")
+			{
+				cout << note->whole();
+				return note->whole();
+			}
+			select = "- 1";
+		}
+		return "";
+	}
+	// Edit 1st part 
+	void edit()
+	{
+
+		cin.ignore();
+		gotoxy(5, 25);
+		cout << "SelectLine: ";
+		gotoxy(5 + 13, 25);
+		cin >> EditedIndex;
+		EditedIndex = EditedIndex - 1;
+		note->edit(EditedIndex);
+		EditingMode();
+	}
+	// Edit second part 
+	void EditingMode()
+	{
+
+		string tempData = note->listToString() + ' ';
+		int position = 0;
+		string dm = "";
+		int post = 0;
+		int counter = 0;
+		int lastCount = -1;
+		bool copierState = false;
+		PrintList(tempData, position);
+		while (true)
+		{
+			// undo
+			if (GetAsyncKeyState(VK_F1))
+			{
+				if (counter > 0)
+					counter--;
+				tempData = stateOfTime[counter];
+				gotoxy(18, 25);
+				position = 0;
+				PrintList(tempData, position);
+			}
+			// REDO
+			if (GetAsyncKeyState(VK_F2))
+			{
+				if (counter < stateOfTime.size())
+					counter++;
+				tempData = stateOfTime[counter];
+				gotoxy(18, 25);
+				position = 0;
+				PrintList(tempData, position);
+			}
+			if (GetAsyncKeyState(VK_LEFT))
+			{
+				if (copierState)
+				{
+					gotoxy(1, 1);
+					cout << "\033[35m" << "COPIED STATE ON";
+					work.push_back(tempData[position]);
+				}
+
+				else
+				{
+					gotoxy(1, 1);
+					cout << "                        ";
+				}
+				if (position > 0)
+					position--;
+				gotoxy(18, 25);
+				cout << "                                                                                                               ";
+				gotoxy(18, 25);
+				PrintList(tempData, position);
+			}
+			else if (GetAsyncKeyState(VK_RIGHT))
+			{
+
+				if (copierState)
+				{
+					gotoxy(1, 1);
+					cout << "\033[35m" << "COPIED STATE ON";
+					work.push_back(tempData[position]);
+				}
+				else
+				{
+					gotoxy(1, 1);
+					cout << "                        ";
+				}
+				if (position < tempData.length() - 1)
+					position++;
+
+				gotoxy(25, 25);
+				cout << "                                                                                                               ";
+
+				gotoxy(18, 25);
+				PrintList(tempData, position);
+			}
+			else if (GetAsyncKeyState(VK_CONTROL))
+			{
+				stateOfTime.push_back(tempData);
+				counter++;
+				gotoxy(18, 24);
+				getline(cin, dm);
+				tempData.insert(position, dm);
+				gotoxy(18, 25);
+				PrintList(tempData, position);
+				gotoxy(18, 24);
+				cout << "                                                                                                                   ";
+				stateOfTime.push_back(tempData);
+				counter++;
+			}
+			else if (GetAsyncKeyState(0x41))
+			{
+				copierState = !copierState;
+			}
+			else if (GetAsyncKeyState(VK_BACK))
+			{
+				if (position > 0)
+				{
+					stateOfTime.push_back(tempData);
+					counter++;
+					tempData.erase(position - 1, 1);
+					gotoxy(18, 25);
+					PrintList(tempData, position);
+					stateOfTime.push_back(tempData);
+					counter++;
+				}
+			}
+			else if (GetAsyncKeyState(VK_HOME))
+			{
+				tempData.insert(position, note->listToString(work));
+				gotoxy(18, 25);
+				PrintList(tempData, position);
+				gotoxy(18, 24);
+				work.clear();
+			}
+			else if (GetAsyncKeyState(VK_ESCAPE))
+			{
+				note->insertAtIndex(EditedIndex, tempData);
+				EditedIndex = -1;
+				return;
+			}
+
+			Sleep(200);
+		}
+	}
+	// Replace
+	void replace()
+	{
+		int x;
+		gotoxy(25, 25);
+		cout << "ENTER THE LINE NUMBER 1: ";
+		gotoxy(53, 25);
+		cin >> x;
+		int y;
+		gotoxy(25, 26);
+		cout << "ENTER THE LINE NUMBER 2: ";
+		gotoxy(53, 26);
+		cin >> y;
+		x--; y--;
+		if (x >= 0 && x < note->sheet->size() && y >= 0 && y < note->sheet->size())
+		{
+			iter_swap(next(note->sheet->begin(), x), next(note->sheet->begin(), y));
+		}
+
+	}
+	// delete 
+	void Delete()
+	{
+		int x;
+		gotoxy(25, 25);
+		cout << "ENTER THE LINE NUMBER: ";
+		gotoxy(50, 25);
+		cin >> x;
+		x = x - 1;
+		if (x >= 0 && x < note->sheet->size())
+		{
+			auto it = next(note->sheet->begin(), x);
+			note->sheet->erase(it);
+		}
+	}
+	void setter()
+	{
+
+	}
+	void PrintList(string data, int p)
+	{
+		int x = 0;
+		for (char a : data)
+		{
+			if (p == x)
+			{
+				cout << "\033[32m" << a;
+			}
+			else
+			{
+				cout << "\033[31m" << a;
+			}
+			x++;
+		}
+	}
+	string Lineget()
+	{
+		cin.ignore();
+		string temp;
+		gotoxy(5, 25);
+		cout << "Enter: ";
+		gotoxy(5 + 9, 25);
+		getline(cin, temp);
+		return temp;
+	}
+	string menuPrint(vector<string> arr, int x, int y)
+	{
+		for (int i = 0; i < arr.size(); i++)
+		{
+			gotoxy(x, y);
+			cout << i + 1 << ". " << arr[i];
+			y++;
+		}
+		int input;
+		gotoxy(x, y++);
+		cout << "Select: ";
+		gotoxy(x, y++);
+		cin >> select;
+		return select;
+	}
+	void LinesPrint()
+	{
+		system("cls");
+		int x = 1;
+		for (const auto a : *(note->sheet))
+		{
+			gotoxy(120, x);
+			cout << x << ": " << merger(a) << endl;
+			x++;
+		}
+
+	}
+	string merger(list<char> line)
+	{
+		string temp = "";
+		for (auto a : line)
+		{
+			temp = temp + a;
+		}
+		return temp;
+	}
+	void gotoxy(int x, int y)
+	{
+		COORD coordinates;
+		coordinates.X = x;
+		coordinates.Y = y;
+		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coordinates);
+	}
+
+};
+
+
+
+// DOS
+
 class Folder;
 
 enum position {
@@ -193,7 +597,6 @@ public:
 	}
 };
 
-
 class DosFrontEnd {
 	Dos* dos;
 	int Line[2] = { 10,12 };
@@ -213,6 +616,7 @@ public:
 	{
 		dos = new Dos(stoi(toGetAnyInput(10, 10, "Enter: ")));
 	}
+	// Dos Main Function Controller
 	void DosWorkingAll()
 	{
 		print(10, 10);
@@ -271,7 +675,7 @@ public:
 			Sleep(200);
 		}
 	}
-	
+	// format
 	void format()
 	{
 		dos->SetPresentFolder();
@@ -281,6 +685,7 @@ public:
 		cout << "FORMAT IS DONE";
 		Sleep(2000);
 	}
+	// dir
 	void dir()
 	{
 
@@ -302,12 +707,14 @@ public:
 		}
 		stoper();
 	}
+	// used to stop or like getch
 	void stoper()
 	{
 		cout << endl;
 		string aa;
 		cin >> aa;
 	}
+	// rename
 	void Rename()
 	{
 		string name = toGetAnyInput(40, 40, "ENTER THE NEW NAME: ");
@@ -315,6 +722,7 @@ public:
 		dos->PresentFolder->Name = name;
 		print(10, 10);
 	}
+	// attrib
 	void attrib()
 	{
 		system("cls");
@@ -342,6 +750,7 @@ public:
 		string op;
 		cin >> op;
 	}
+	// Delete
 	void Delete(string name) {
 		int x = 0;
 		for (auto i : dos->Present)
@@ -354,6 +763,7 @@ public:
 			x++;
 		}
 	}
+	// OptionViewr
 	void OptionViewer()
 	{
 		if (FoldOrFilSelect == 0)
@@ -451,7 +861,12 @@ public:
 				{
 					CopiedOrCut.push_back(dos->PresentFolder->FilesInFolder[s]);
 				}
-
+				// to open the note pad;
+				if (GetAsyncKeyState(0x4d))
+				{
+					FrontEnd* f = new FrontEnd(dos->PresentFolder->FilesInFolder[s]->data + '\n');
+					dos->PresentFolder->FilesInFolder[s]->data = f->Driver();
+				}
 				if (GetAsyncKeyState(VK_ESCAPE))
 				{
 					return;
@@ -459,6 +874,7 @@ public:
 			}
 		}
 	}
+	// paste function
 	void paste()
 	{
 		for (auto i : CopiedOrCut)
@@ -914,7 +1330,7 @@ public:
 	{
 		string name = toGetAnyInput(30, 40, "NAME OF FILE: ");
 		string data = toGetAnyInput(30, 42, "DATA IN FILE: ");
-		File* f = new File(data.size(), name + ".txt", F->path + name);
+		File* f = new File(data.size(), name + ".txt", F->path + name,data);
 		return f;
 	}
 	// Create Folder Interface
@@ -937,31 +1353,30 @@ public:
 	{
 		system("cls");
 		gotoxy(0, 3);
-		TreePrinter(dos->Disk, 1, 1);
+		dos->SetPresentFolder();
+		gotoxy(0, 0);
+		cout << dos->PresentFolder->Name;
+		int y = 1;
+		TreePrinter(dos->PresentFolder->FoldersInFolders, 1, y,10);
 		Sleep(5000);
-		getchar();
+		stoper();
 		print(10, 10);
 	}
 	// tree printer with parameters
-	void TreePrinter(vector<Folder*> folders, int num, int y)
+	void TreePrinter(vector<Folder*> folders, int num,int &y,int x)
 	{
-
+	
 		for (int i = 0; i < folders.size(); i++)
 		{
-
-			cout << "Folder: " << folders[i]->Name << endl;
+			gotoxy(x, y);
+			cout << "|_____" << folders[i]->Name << endl;
 			if (!folders[i]->FoldersInFolders.empty())
 			{
-				TreePrinter(folders[i]->FoldersInFolders, num + 3, y++);
+				y++;
+				TreePrinter(folders[i]->FoldersInFolders, num + 3, y,x+5);
 			}
-			if (!folders[i]->FilesInFolder.empty())
-			{
-				for (int j = 0; j < folders[j]->FilesInFolder.size(); j++)
-				{
-
-					cout << "File: " << folders[i]->FilesInFolder[j]->Name;
-				}
-			}
+			y++;
+			
 		}
 	}
 	// find only
@@ -1095,7 +1510,6 @@ public:
 		cout << "Faizi Dos [Version: 12:19:2023:6:33]";
 		stoper();
 	}
-	
 };
 
 int main()
